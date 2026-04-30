@@ -155,6 +155,7 @@
             echo $usuario;
         ?>
     </p>
+    
     <form action="" method="POST">
         <p>
             <label for="agenda">Escolha uma agenda:</label>
@@ -176,49 +177,98 @@
         <h2>
             <?php echo $agenda_selecionada ? "Você está editando a agenda: " . htmlspecialchars($agenda_selecionada) : "Selecione uma agenda acima"; ?>
         </h2>
-    <form action="inserir_rotina.php" method="POST">
-        <input type="hidden" name="id_agenda" value="<?php echo $id_final?>">
+    <div>
+        <form action="inserir_rotina.php" method="POST">
+            <input type="hidden" name="id_agenda" value="<?php echo $id_final?>">
 
-        <input type="date" id="data_inicio" name="data_inicio">
-        <label for="data_inicio">Data inicial</label>
-        <br>
-        <input type="date" id="data_final" name="data_final">
-        <label for="data_final">Data final</label>
-        <br>
-        <input type="time" id="hora_inicio" name="hora_inicio">
-        <label for="hora_inicio">Hora inicial</label>
-        <br>
-        <input type="time" id="hora_final" name="hora_final">
-        <label for="hora_final">Hora final</label>
-        <br>
-        <input type="number" id="duracao" min="1" max="1440" name="duracao">
-        <label for="duracao">Duração</label>
-        <br>
-        <input type="checkbox" id="domingo" name="domingo" value="1">
-        <label for="domingo">domingo</label>
-        <br>
-        <input type="checkbox" id="segunda" name="segunda" value="1">
-        <label for="segunda">segunda</label>
-        <br>
-        <input type="checkbox" id="terca" name="terca" value="1">
-        <label for="terca">terça</label>
-        <br>
-        <input type="checkbox" id="quarta" name="quarta" value="1">
-        <label for="quarta">quarta</label>
-        <br>
-        <input type="checkbox" id="quinta" name="quinta"  value="1">
-        <label for="quinta">quinta</label>
-        <br>
-        <input type="checkbox" id="sexta" name="sexta" value="1">
-        <label for="sexta">sexta</label>
-        <br>
-        <input type="checkbox" id="sabado" name="sabado" value="1">
-        <label for="sabado">sábado</label>
-        <br>
-        <p>
-            <button type="submit">Confirmar configuração</button>
-        </p>
-    </form>
+            <input type="date" id="data_inicio" name="data_inicio">
+            <label for="data_inicio">Data inicial</label>
+
+            <input type="date" id="data_final" name="data_final">
+            <label for="data_final">Data final</label>
+    
+            <input type="time" id="hora_inicio" name="hora_inicio">
+            <label for="hora_inicio">Hora inicial</label>
+    
+            <input type="time" id="hora_final" name="hora_final">
+            <label for="hora_final">Hora final</label>
+    
+            <input type="number" id="duracao" min="1" max="1440" name="duracao">
+            <label for="duracao">Duração</label>
+    
+            <input type="checkbox" id="domingo" name="domingo" value="1">
+            <label for="domingo">DOM</label>
+
+            <input type="checkbox" id="segunda" name="segunda" value="1">
+            <label for="segunda">SEG</label>
+        
+            <input type="checkbox" id="terca" name="terca" value="1">
+            <label for="terca">TER</label>
+    
+            <input type="checkbox" id="quarta" name="quarta" value="1">
+            <label for="quarta">QUA</label>
+
+            <input type="checkbox" id="quinta" name="quinta"  value="1">
+            <label for="quinta">QUI</label>
+    
+            <input type="checkbox" id="sexta" name="sexta" value="1">
+            <label for="sexta">SEX</label>
+    
+            <input type="checkbox" id="sabado" name="sabado" value="1">
+            <label for="sabado">SÁB</label>
+        
+            <p>
+                <button type="submit">Confirmar configuração</button>
+            </p>
+        </form>
+    </div>
+
+    
+   <div>
+       <form action="inserir_rotina.php" method="POST">
+            <input type="hidden" name="id_agenda" value="<?php echo $id_final?>">
+
+            <input type="date" id="data_inicio" name="data_inicio">
+            <label for="data_inicio">Data inicial</label>
+            
+            <input type="date" id="data_final" name="data_final">
+            <label for="data_final">Data final</label>
+            
+            <input type="time" id="hora_inicio" name="hora_inicio">
+            <label for="hora_inicio">Hora inicial</label>
+           
+            <input type="time" id="hora_final" name="hora_final">
+            <label for="hora_final">Hora final</label>
+            
+            <input type="number" id="duracao" min="1" max="1440" name="duracao">
+            <label for="duracao">Duração</label>
+            
+            <input type="checkbox" id="domingo" name="domingo" value="1">
+            <label for="domingo">DOM</label>
+            
+            <input type="checkbox" id="segunda" name="segunda" value="1">
+            <label for="segunda">SEG</label>
+            
+            <input type="checkbox" id="terca" name="terca" value="1">
+            <label for="terca">TER</label>
+            
+            <input type="checkbox" id="quarta" name="quarta" value="1">
+            <label for="quarta">QUA</label>
+            
+            <input type="checkbox" id="quinta" name="quinta"  value="1">
+            <label for="quinta">QUI</label>
+            
+            <input type="checkbox" id="sexta" name="sexta" value="1">
+            <label for="sexta">SEX</label>
+            
+            <input type="checkbox" id="sabado" name="sabado" value="1">
+            <label for="sabado">SÁB</label>
+            
+            <p>
+                <button type="submit">Confirmar configuração</button>
+            </p>
+        </form>
+    </div>
     <div id='calendar'></div>
     <div>
         <a href="painel.php">Voltar ao Painel</a>

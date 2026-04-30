@@ -7,11 +7,15 @@
 
     $id_agenda = (int)$_POST['id_agenda'];
 
-    $data_inicio = new DateTime($_POST['data_inicio'])->format('Y-m-d');
-    $data_termino = new DateTime($_POST['data_final'])->format('Y-m-d');
+    $data_inicio = new DateTime($_POST['data_inicio']);
+    $data_inicio = $data_inicio->format('Y-m-d');
+    $data_termino = new DateTime($_POST['data_final']);
+    $data_termino = $data_termino->format('Y-m-d');
 
-    $hora_inicio = new DateTime($_POST['hora_inicio'])->format('H:i:s');
-    $hora_termino = new DateTime($_POST['hora_final'])->format('H:i:s');
+    $hora_inicio = new DateTime($_POST['hora_inicio']);
+    $hora_inicio = $hora_inicio->format('H:i:s');
+    $hora_termino = new DateTime($_POST['hora_final']);
+    $hora_termino = $hora_termino->format('H:i:s');
 
     $duracao = (int)$_POST['duracao'];
 
