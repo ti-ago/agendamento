@@ -139,23 +139,21 @@ ALTER TABLE `rotinas`
 ALTER TABLE `users`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
---
--- Restrições para tabelas despejadas
---
 
---
 -- Restrições para tabelas `agenda`
 --
 ALTER TABLE `agenda`
   ADD CONSTRAINT `fk_user` FOREIGN KEY (`id_user`) REFERENCES `users` (`id`);
 
---
--- Restrições para tabelas `rotinas`
---
+
 ALTER TABLE `rotinas`
   ADD CONSTRAINT `fk_agenda` FOREIGN KEY (`id_agenda`) REFERENCES `agenda` (`id`);
 COMMIT;
 
-/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
-/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
-/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+CREATE TABLE `excessoes` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `id_agenda` int(11) NOT NULL FOREIGN KEY REFERENCES `agenda`(`id`),
+  `data` date NOT NULL,
+  `hora_inicio` time NOT NULL,
+  `hora_termino` time NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

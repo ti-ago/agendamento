@@ -225,7 +225,7 @@
 
     
    <div>
-       <form action="inserir_rotina.php" method="POST">
+       <form action="inserir_excessao.php" method="POST">
             <input type="hidden" name="id_agenda" value="<?php echo $id_final?>">
 
             <input type="date" id="data_inicio" name="data_inicio">
