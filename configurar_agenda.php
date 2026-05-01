@@ -6,6 +6,7 @@
     $id_usuario = $_SESSION['id'];
 
     $eventos=[];
+    $lista_excessoes=[];
 
     $agenda_selecionada = "";
     $id_final = "";
@@ -31,6 +32,27 @@
     $sql_rotinas = "SELECT * FROM rotinas WHERE id_agenda = '$id_final'";
     $query_rotinas = $mysqli->query($sql_rotinas);
 
+    $sql_excessoes = "SELECT * FROM excessoes WHERE id_agenda = '$id_final'";
+    $query_excessoes = $mysqli->query($sql_excessoes);
+
+    
+
+    if($query_excessoes) {
+        while($resposta = $query_excessoes->fetch_assoc()){
+            $data = new DateTime($resposta['data']);
+            $data_time = $data ->format('Y-m-d');
+            $inicio = new DateTime($resposta['hora_inicio']);
+            $inicio_time = $inicio ->format('H:i:s');
+            $final = new DateTime($resposta['hora_termino']);
+            $final_time = $final ->format('H:i:s');
+            $lista_excessoes[] = [
+                'data' => $data_time,
+                'inicio' => $inicio_time ,
+                'final' => $final_time
+            ];
+        }     
+    }
+   
     if($query_rotinas) {
         while($resposta = $query_rotinas->fetch_assoc()){
         
@@ -218,7 +240,7 @@
             <label for="sabado">SÁB</label>
         
             <p>
-                <button type="submit">Confirmar configuração</button>
+                <button type="submit">Confirmar rotina</button>
             </p>
         </form>
     </div>
@@ -228,11 +250,8 @@
        <form action="inserir_excessao.php" method="POST">
             <input type="hidden" name="id_agenda" value="<?php echo $id_final?>">
 
-            <input type="date" id="data_inicio" name="data_inicio">
-            <label for="data_inicio">Data inicial</label>
-            
-            <input type="date" id="data_final" name="data_final">
-            <label for="data_final">Data final</label>
+            <input type="date" id="data" name="data">
+            <label for="data">Data</label>
             
             <input type="time" id="hora_inicio" name="hora_inicio">
             <label for="hora_inicio">Hora inicial</label>
@@ -240,32 +259,11 @@
             <input type="time" id="hora_final" name="hora_final">
             <label for="hora_final">Hora final</label>
             
-            <input type="number" id="duracao" min="1" max="1440" name="duracao">
-            <label for="duracao">Duração</label>
-            
-            <input type="checkbox" id="domingo" name="domingo" value="1">
-            <label for="domingo">DOM</label>
-            
-            <input type="checkbox" id="segunda" name="segunda" value="1">
-            <label for="segunda">SEG</label>
-            
-            <input type="checkbox" id="terca" name="terca" value="1">
-            <label for="terca">TER</label>
-            
-            <input type="checkbox" id="quarta" name="quarta" value="1">
-            <label for="quarta">QUA</label>
-            
-            <input type="checkbox" id="quinta" name="quinta"  value="1">
-            <label for="quinta">QUI</label>
-            
-            <input type="checkbox" id="sexta" name="sexta" value="1">
-            <label for="sexta">SEX</label>
-            
-            <input type="checkbox" id="sabado" name="sabado" value="1">
-            <label for="sabado">SÁB</label>
-            
+            <!--<input type="checkbox" id="repetir" name="repetir" value="1">
+            <label for="repetir">Repetir</label>-->
+                        
             <p>
-                <button type="submit">Confirmar configuração</button>
+                <button type="submit">Confirmar excessão</button>
             </p>
         </form>
     </div>
