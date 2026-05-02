@@ -50,7 +50,16 @@
                 'inicio' => $inicio_time ,
                 'final' => $final_time
             ];
-        }     
+        }
+        foreach ($lista_excessoes as $excessao){
+            $eventos[]=[
+                'title' => 'BLOQUEADO',
+                'start' => $excessao['data']."T".$excessao['inicio'],
+                'end' => $excessao['data']."T".$excessao['final'],
+                'backgroundColor' => '#ff0000',
+                'borderColor'=> '#cc0000'
+            ];
+        }
     }
    
     if($query_rotinas) {
@@ -113,11 +122,24 @@
                         $hora_final_atendimento = clone $hora_inicio_atendimento;
                         $hora_final_atendimento->modify("+ $duracao_atendimentos_minutos minutes");
 
-                        $eventos[] = [
+                        $horario_bloqueado = false; 
+                        foreach ($lista_excessoes as $excessao){
+                            if($dia->format("Y-m-d")==$excessao['data'] && ($hora_inicio_atendimento>=new DateTime($excessao['inicio'])) && ($hora_inicio_atendimento<new DateTime($excessao['final']))){
+                                $horario_bloqueado=true;
+                            }
+                            if($dia->format("Y-m-d")==$excessao['data'] && ($hora_final_atendimento>new DateTime($excessao['inicio'])) && ($hora_final_atendimento<=new DateTime($excessao['final']))){
+                                $horario_bloqueado=true;
+                            }
+                        }
+                        
+                        if(!$horario_bloqueado){
+                            $eventos[] = [
                             'title' => 'Disponivel',
                             'start' => $dia->format('Y-m-d')."T".$hora_inicio_atendimento->format('H:i:s'),
                             'end' => $dia->format('Y-m-d')."T".$hora_final_atendimento->format('H:i:s'),
-                        ];
+                            ];
+                        }
+                        $horario_bloqueado = false;   
                     }         
                 }; 
             };
