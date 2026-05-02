@@ -126,9 +126,11 @@
                         foreach ($lista_excessoes as $excessao){
                             if($dia->format("Y-m-d")==$excessao['data'] && ($hora_inicio_atendimento>=new DateTime($excessao['inicio'])) && ($hora_inicio_atendimento<new DateTime($excessao['final']))){
                                 $horario_bloqueado=true;
+                                break;
                             }
                             if($dia->format("Y-m-d")==$excessao['data'] && ($hora_final_atendimento>new DateTime($excessao['inicio'])) && ($hora_final_atendimento<=new DateTime($excessao['final']))){
                                 $horario_bloqueado=true;
+                                break;
                             }
                         }
                         
