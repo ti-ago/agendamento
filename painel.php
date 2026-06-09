@@ -27,6 +27,9 @@
         $novo_valor = is_numeric($novo_valor) ? (float)$novo_valor : 'NULL';
 
         $sql_up = "UPDATE agenda SET servico='$novo_servico', nome_profissional='$novo_prof', chave_pix='$nova_chave_pix', valor=$novo_valor";
+        $nova_mensagem = $mysqli->real_escape_string($_POST['mensagem_confirmacao'] ?? '');
+        $novo_link = $mysqli->real_escape_string($_POST['link_confirmacao'] ?? '');
+        $sql_up .= ", mensagem_confirmacao='$nova_mensagem', link_confirmacao='$novo_link'";
         if (!empty($_FILES['foto_profissional']['name'])) {
             $finfo = finfo_open(FILEINFO_MIME_TYPE);
             $mime = finfo_file($finfo, $_FILES['foto_profissional']['tmp_name']);
@@ -617,6 +620,16 @@
                             </div>
 
                             <div class="config-section">
+                                <label>Mensagem de Confirmação <small>(exibida após agendamento)</small></label>
+                                <textarea name="mensagem_confirmacao" class="config-input" rows="3" style="resize:vertical; font-family:inherit;"><?= htmlspecialchars($agenda_config['mensagem_confirmacao'] ?? '') ?></textarea>
+                            </div>
+
+                            <div class="config-section">
+                                <label>Link Personalizado <small>(Google Forms, etc.)</small></label>
+                                <input type="url" name="link_confirmacao" class="config-input" value="<?= htmlspecialchars($agenda_config['link_confirmacao'] ?? '') ?>" placeholder="https://forms.google.com/...">
+                            </div>
+
+                            <div class="config-section">
                                 <label>Valor do Serviço (R$)</label>
                                 <input type="text" name="valor" class="config-input" value="<?= htmlspecialchars($agenda_config['valor'] ?? '') ?>" placeholder="Ex: 79,90">
                             </div>
@@ -641,6 +654,10 @@
         </div>
 
         <div class="main-content">
+            <div id="poll-notification" style="display:none; align-items:center; gap:12px; background:#e8f5e9; border:1px solid #34a853; border-radius:8px; padding:10px 16px; margin-bottom:12px; font-size:0.85rem;">
+                <span style="flex:1;" class="poll-msg"></span>
+                <button onclick="recarregarDados(); this.parentElement.style.display='none';" style="background:#34a853; color:#fff; border:none; border-radius:6px; padding:6px 14px; font-size:0.8rem; cursor:pointer; font-family:inherit;">Atualizar</button>
+            </div>
             <div class="main-header">
                 <h1><?= $agenda_selecionada ? htmlspecialchars($agenda_selecionada) : 'Selecione uma agenda' ?></h1>
                 <button onclick="abrirModalNovaAgenda()" class="btn-new-agenda">+ Nova Agenda</button>
@@ -848,6 +865,33 @@
         calendar.render();
 
         renderizarTabelas(<?php echo $json_rotinas; ?>, <?php echo $json_excessoes; ?>, <?php echo $json_excessoes_raw; ?>, <?php echo $json_agendamentos; ?>);
+
+        // Polling para novos agendamentos
+        let ultimoIdAgendamento = 0;
+        const agendaIdPoll = <?= (int)($id_final ?? 0) ?>;
+        if (agendaIdPoll) {
+            // Get initial max id
+            const linhas = <?php echo $json_agendamentos; ?>;
+            for (const ag of linhas) {
+                if (ag.id > ultimoIdAgendamento) ultimoIdAgendamento = ag.id;
+            }
+            const pollNotification = document.getElementById('poll-notification');
+            setInterval(async function() {
+                try {
+                    const resp = await fetch(`verificar_novos_agendamentos.php?agenda_id=${agendaIdPoll}&ultimo_id=${ultimoIdAgendamento}`);
+                    const data = await resp.json();
+                    if (data.success && data.total > 0) {
+                        ultimoIdAgendamento = data.novos[data.total - 1].id;
+                        if (pollNotification) {
+                            pollNotification.style.display = 'flex';
+                            pollNotification.querySelector('.poll-msg').textContent = data.total + ' novo(s) agendamento(s) recebido(s)!';
+                        }
+                    }
+                } catch (e) {
+                    // silent
+                }
+            }, 15000);
+        }
     });
 
     function abrirModalNovaAgenda() {

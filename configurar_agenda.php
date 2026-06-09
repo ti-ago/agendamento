@@ -26,6 +26,9 @@
         $novo_valor = is_numeric($novo_valor) ? (float)$novo_valor : 'NULL';
 
         $sql_up = "UPDATE agenda SET servico='$novo_servico', nome_profissional='$novo_prof', chave_pix='$nova_chave_pix', valor=$novo_valor";
+        $nova_mensagem = $mysqli->real_escape_string($_POST['mensagem_confirmacao'] ?? '');
+        $novo_link = $mysqli->real_escape_string($_POST['link_confirmacao'] ?? '');
+        $sql_up .= ", mensagem_confirmacao='$nova_mensagem', link_confirmacao='$novo_link'";
         if (!empty($_FILES['foto_profissional']['name'])) {
             $finfo = finfo_open(FILEINFO_MIME_TYPE);
             $mime = finfo_file($finfo, $_FILES['foto_profissional']['tmp_name']);
@@ -411,6 +414,11 @@
                                style="width:100%; padding:6px 8px; border:1px solid #ccc; border-radius:4px; font-size:0.8rem; margin-bottom:8px;">
                         <label style="font-size:0.75rem; font-weight:500;">Chave PIX (para pagamento)</label>
                         <input type="text" name="chave_pix" value="<?= htmlspecialchars($agenda_config['chave_pix'] ?? '') ?>"
+                               style="width:100%; padding:6px 8px; border:1px solid #ccc; border-radius:4px; font-size:0.8rem; margin-bottom:8px;">
+                        <label style="font-size:0.75rem; font-weight:500;">Mensagem de Confirmação <small>(exibida após agendamento)</small></label>
+                        <textarea name="mensagem_confirmacao" rows="3" style="width:100%; padding:6px 8px; border:1px solid #ccc; border-radius:4px; font-size:0.8rem; margin-bottom:8px; font-family:inherit; resize:vertical;"><?= htmlspecialchars($agenda_config['mensagem_confirmacao'] ?? '') ?></textarea>
+                        <label style="font-size:0.75rem; font-weight:500;">Link Personalizado <small>(Google Forms, etc.)</small></label>
+                        <input type="url" name="link_confirmacao" value="<?= htmlspecialchars($agenda_config['link_confirmacao'] ?? '') ?>" placeholder="https://forms.google.com/..."
                                style="width:100%; padding:6px 8px; border:1px solid #ccc; border-radius:4px; font-size:0.8rem; margin-bottom:8px;">
                         <label style="font-size:0.75rem; font-weight:500;">Valor do Serviço (R$)</label>
                         <input type="text" name="valor" value="<?= htmlspecialchars($agenda_config['valor'] ?? '') ?>" placeholder="Ex: 79,90"

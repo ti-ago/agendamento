@@ -287,9 +287,23 @@ $chave_pix = $agenda['chave_pix'] ?? '';
                     <div class="token-display">
                         <div class="token-label">Token de Confirmação</div>
                         <div class="token-value"><?= htmlspecialchars($token_gerado) ?></div>
-                        <div class="token-msg">Anote este token e apresente na clinica no dia do atendimento.</div>
+                        <div class="token-msg">Anote este token e apresente na clínica no dia do atendimento.</div>
                     </div>
-                    <a href="agendar.php?id=<?= $agenda_id ?>" class="btn btn-secondary" style="margin-top:16px;">Agendar outro horario</a>
+
+                    <?php if (!empty($agenda['mensagem_confirmacao'])): ?>
+                        <div style="background:#f9f9f9; border:1px solid #eee; border-radius:12px; padding:16px; margin:16px 0; text-align:left;">
+                            <div style="font-size:0.75rem; text-transform:uppercase; letter-spacing:1px; color:#888; font-weight:600; margin-bottom:6px;">Mensagem do Profissional</div>
+                            <div style="font-size:0.9rem; color:#333; line-height:1.5; white-space:pre-wrap;"><?= htmlspecialchars($agenda['mensagem_confirmacao']) ?></div>
+                        </div>
+                    <?php endif; ?>
+
+                    <?php if (!empty($agenda['link_confirmacao'])): ?>
+                        <a href="<?= htmlspecialchars($agenda['link_confirmacao']) ?>" target="_blank" class="btn btn-primary" style="margin-top:8px; text-decoration:none; display:block;">
+                            Acessar Link do Profissional
+                        </a>
+                    <?php endif; ?>
+
+                    <a href="agendar.php?id=<?= $agenda_id ?>" class="btn btn-secondary" style="margin-top:16px;">Agendar outro horário</a>
                 </div>
             <?php else: ?>
                 <!-- Payment / Confirmation form -->
