@@ -75,8 +75,11 @@
             echo "Selecione uma agenda";
         } else {
             $agenda_selecionada = $mysqli->real_escape_string($_POST['agenda']);
-            $query_id = $mysqli->query("SELECT * FROM agenda WHERE servico = '$agenda_selecionada'");
-
+            $stmt_sel = $mysqli->prepare("SELECT * FROM agenda WHERE servico = ?");
+            $stmt_sel->bind_param('s', $agenda_selecionada);
+            $stmt_sel->execute();
+            $query_id = $stmt_sel->get_result();
+            
             if ($query_id) {
                 $dados = $query_id->fetch_assoc();
                 if ($dados) {

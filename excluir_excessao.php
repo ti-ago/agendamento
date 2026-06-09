@@ -3,6 +3,8 @@
     include('conexao.php');
     header('Content-Type: application/json');
 
+    verificarCSRF();
+
     $id = (int)($_POST['id'] ?? 0);
 
     if (!usuarioDono($mysqli, 'excessoes', $id)) {

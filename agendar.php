@@ -7,8 +7,11 @@ if (!$id_agenda) {
     die('<h1>Agenda não especificada.</h1>');
 }
 
-$query = $mysqli->query("SELECT a.*, u.nome as profissional FROM agenda a INNER JOIN users u ON a.id_user = u.id WHERE a.id = '$id_agenda'");
-$agenda = $query->fetch_assoc();
+$stmt_agenda = $mysqli->prepare("SELECT a.*, u.nome as profissional FROM agenda a INNER JOIN users u ON a.id_user = u.id WHERE a.id = ?");
+$stmt_agenda->bind_param('i', $id_agenda);
+$stmt_agenda->execute();
+$result_agenda = $stmt_agenda->get_result();
+$agenda = $result_agenda->fetch_assoc();
 if (!$agenda) {
     die('<h1>Agenda não encontrada.</h1>');
 }
