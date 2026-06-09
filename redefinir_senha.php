@@ -3,45 +3,44 @@ include('conexao.php');
 
 $mensagem = '';
 $erro = '';
+$token_valido = false;
+$token = '';
 
-if(isset($_POST['email']) && isset($_POST['nome']) && isset($_POST['senha']) && isset($_POST['confirmacao'])){
+if (isset($_GET['token'])) {
+    $token = $mysqli->real_escape_string($_GET['token']);
+    $query = $mysqli->query("SELECT id_user FROM reset_tokens WHERE token = '$token' AND usado = 0 AND expira_em > NOW()");
 
-    if(strlen(trim($_POST['email'])) == 0) {
-        $erro = 'Preencha seu e-mail';
-    } else if(strlen(trim($_POST['nome'])) == 0) {
-        $erro = 'Preencha seu nome';
-    } else if(strlen(trim($_POST['senha'])) < 6) {
-        $erro = 'A senha deve ter pelo menos 6 caracteres';
-    } else if(trim($_POST['confirmacao']) != trim($_POST['senha'])) {
-        $erro = 'A confirmacao deve ser igual a senha';
+    if ($query && $query->num_rows == 1) {
+        $token_valido = true;
     } else {
-        $email = $mysqli->real_escape_string(trim($_POST['email']));
-        $nome = $mysqli->real_escape_string(trim($_POST['nome']));
-        $senha_hash = password_hash($_POST['senha'], PASSWORD_BCRYPT);
-        $confirmacao_token = bin2hex(random_bytes(32));
+        $erro = 'Token invalido ou expirado. Solicite uma nova recuperacao.';
+    }
+}
 
-        $result = $mysqli->query("SELECT * FROM users WHERE email = '$email'");
+if (isset($_POST['token']) && isset($_POST['senha']) && isset($_POST['confirmacao'])) {
+    $token = $mysqli->real_escape_string($_POST['token']);
+    $senha = $_POST['senha'];
+    $confirmacao = $_POST['confirmacao'];
 
-        if($result && $result->num_rows > 0) {
-            $erro = 'E-mail ja cadastrado';
+    if (strlen($senha) < 6) {
+        $erro = 'A senha deve ter pelo menos 6 caracteres';
+    } elseif ($senha !== $confirmacao) {
+        $erro = 'As senhas nao conferem';
+    } else {
+        $query = $mysqli->query("SELECT id_user FROM reset_tokens WHERE token = '$token' AND usado = 0 AND expira_em > NOW()");
+
+        if ($query && $query->num_rows == 1) {
+            $row = $query->fetch_assoc();
+            $id_user = (int)$row['id_user'];
+            $senha_hash = password_hash($senha, PASSWORD_BCRYPT);
+
+            $mysqli->query("UPDATE users SET senha_hash = '$senha_hash', senha = '' WHERE id = $id_user");
+            $mysqli->query("UPDATE reset_tokens SET usado = 1 WHERE token = '$token'");
+
+            $mensagem = 'Senha redefinida com sucesso! Faca login com sua nova senha.';
+            $token_valido = false;
         } else {
-            $sql_code = "INSERT INTO users (email, nome, senha, senha_hash, confirmacao_token, email_confirmado) VALUES('$email','$nome','','$senha_hash','$confirmacao_token', 0)";
-            $result = $mysqli->query($sql_code);
-
-            if($mysqli->affected_rows > 0) {
-                $link_confirmacao = (isset($_SERVER['HTTPS']) ? 'https' : 'http') . '://' . $_SERVER['HTTP_HOST'] . '/agendamento/confirmar_email.php?token=' . $confirmacao_token;
-                $assunto = 'Confirme seu e-mail - Facilite';
-                $corpo = "Ola $nome,\n\nConfirme seu e-mail clicando no link abaixo:\n$link_confirmacao\n\nApos confirmar, voce podera fazer login.\n\nAtenciosamente,\nEquipe Facilite";
-
-                require_once 'includes/email.php';
-                if (enviarEmail($email, $assunto, $corpo)) {
-                    $mensagem = 'Conta criada! Confirme seu e-mail antes de fazer login.';
-                } else {
-                    $mensagem = 'Conta criada! Porem nao foi possivel enviar o e-mail de confirmacao.';
-                }
-            } else {
-                $erro = 'Falha ao criar novo usuario';
-            }
+            $erro = 'Token invalido ou expirado.';
         }
     }
 }
@@ -51,29 +50,21 @@ if(isset($_POST['email']) && isset($_POST['nome']) && isset($_POST['senha']) && 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Facilite - Criar Conta</title>
+    <title>Facilite - Redefinir Senha</title>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         body {
             font-family: 'Roboto', 'Helvetica Neue', Arial, sans-serif;
-            background: #f0f2f5;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-            color: #1a1a2e;
+            background: #f0f2f5; min-height: 100vh;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            padding: 20px; color: #1a1a2e;
         }
         .card {
-            background: #fff;
-            border-radius: 16px;
-            padding: 40px 36px;
+            background: #fff; border-radius: 16px; padding: 40px 36px;
             box-shadow: 0 2px 24px rgba(0,0,0,0.06);
-            width: 100%;
-            max-width: 380px;
-            text-align: center;
+            width: 100%; max-width: 380px; text-align: center;
         }
         .logo { margin-bottom: 24px; }
         .logo img { height: 60px; }
@@ -87,7 +78,6 @@ if(isset($_POST['email']) && isset($_POST['nome']) && isset($_POST['senha']) && 
         .form-group input {
             width: 100%; padding: 10px 12px; border: 1px solid #d0d0d0;
             border-radius: 8px; font-size: 0.9rem; font-family: inherit;
-            transition: border-color 0.15s;
         }
         .form-group input:focus { border-color: #3465a4; outline: none; }
         .btn-primary {
@@ -115,8 +105,8 @@ if(isset($_POST['email']) && isset($_POST['nome']) && isset($_POST['senha']) && 
         <div class="logo">
             <img src="images/logo.jpg" alt="Facilite">
         </div>
-        <h1>Criar Conta</h1>
-        <p class="subtitle">Cadastre-se para gerenciar suas agendas</p>
+        <h1>Redefinir Senha</h1>
+        <p class="subtitle">Escolha uma nova senha para sua conta</p>
 
         <?php if ($erro): ?>
             <div class="erro"><?= htmlspecialchars($erro) ?></div>
@@ -125,26 +115,21 @@ if(isset($_POST['email']) && isset($_POST['nome']) && isset($_POST['senha']) && 
             <div class="sucesso"><?= htmlspecialchars($mensagem) ?></div>
         <?php endif; ?>
 
-        <?php if (!$mensagem): ?>
+        <?php if ($token_valido): ?>
         <form action="" method="POST">
+            <input type="hidden" name="token" value="<?= htmlspecialchars($token) ?>">
             <div class="form-group">
-                <label for="nome">Nome</label>
-                <input type="text" name="nome" id="nome" placeholder="Seu nome" required>
-            </div>
-            <div class="form-group">
-                <label for="email">E-mail</label>
-                <input type="email" name="email" id="email" placeholder="seu@email.com" required>
-            </div>
-            <div class="form-group">
-                <label for="senha">Senha</label>
+                <label for="senha">Nova Senha</label>
                 <input type="password" name="senha" id="senha" placeholder="Minimo 6 caracteres" required>
             </div>
             <div class="form-group">
                 <label for="confirmacao">Confirmar Senha</label>
                 <input type="password" name="confirmacao" id="confirmacao" placeholder="Repita a senha" required>
             </div>
-            <button type="submit" class="btn-primary">Criar Conta</button>
+            <button type="submit" class="btn-primary">Redefinir Senha</button>
         </form>
+        <?php elseif (!$erro && !$mensagem): ?>
+            <p style="color:#888;font-size:0.9rem;">Token nao informado.</p>
         <?php endif; ?>
 
         <div class="links">

@@ -1,159 +1,104 @@
--- phpMyAdmin SQL Dump
--- version 5.2.3deb1
--- https://www.phpmyadmin.net/
---
--- Host: localhost:3306
--- Tempo de geração: 30/04/2026 às 16:56
--- Versão do servidor: 11.8.6-MariaDB-6 from Debian
--- Versão do PHP: 8.4.20
+-- MariaDB dump 10.19-11.8.6-MariaDB, for debian-linux-gnu (x86_64)
+-- Host: localhost    Database: login
+-- Server version	11.8.6-MariaDB-6 from Debian
 
-SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
-START TRANSACTION;
-SET time_zone = "+00:00";
+CREATE DATABASE IF NOT EXISTS `login` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_uca1400_ai_ci;
+USE `login`;
 
-
-/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
-/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
-/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
-/*!40101 SET NAMES utf8mb4 */;
-
---
--- Banco de dados: `login`
---
-
--- --------------------------------------------------------
-
---
--- Estrutura para tabela `agenda`
---
-
-CREATE TABLE `agenda` (
-  `id` int(11) NOT NULL,
-  `id_user` int(11) DEFAULT NULL,
-  `servico` varchar(240) DEFAULT NULL
+CREATE TABLE `users` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `nome` varchar(140) NOT NULL,
+  `email` varchar(140) NOT NULL,
+  `senha` varchar(255) NOT NULL,
+  `senha_hash` varchar(255) DEFAULT NULL,
+  `email_confirmado` tinyint(1) DEFAULT 0,
+  `confirmacao_token` varchar(64) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `email` (`email`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
 
---
--- Despejando dados para a tabela `agenda`
---
+INSERT INTO `users` (`id`, `nome`, `email`, `senha`) VALUES
+(7, 'Teste', 'teste@teste.com', 'teste');
 
-INSERT INTO `agenda` (`id`, `id_user`, `servico`) VALUES
-(21, 7, 'teste');
-
--- --------------------------------------------------------
-
---
--- Estrutura para tabela `rotinas`
---
+CREATE TABLE `agenda` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `id_user` int(11) NOT NULL,
+  `nome_profissional` varchar(240) DEFAULT NULL,
+  `foto_profissional` varchar(500) DEFAULT NULL,
+  `chave_pix` varchar(255) DEFAULT NULL,
+  `valor` decimal(10,2) DEFAULT NULL,
+  `chave_pix` varchar(255) DEFAULT NULL,
+  `servico` varchar(240) NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `fk_user` (`id_user`),
+  CONSTRAINT `fk_user` FOREIGN KEY (`id_user`) REFERENCES `users` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
 
 CREATE TABLE `rotinas` (
-  `id` int(11) NOT NULL,
-  `id_agenda` int(11) DEFAULT NULL,
-  `data_inicio` date DEFAULT NULL,
-  `data_termino` date DEFAULT NULL,
-  `hora_inicio` time DEFAULT NULL,
-  `hora_termino` time DEFAULT NULL,
-  `duracao` int(11) DEFAULT NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `id_agenda` int(11) NOT NULL,
+  `data_inicio` date NOT NULL,
+  `data_termino` date NOT NULL,
+  `hora_inicio` time NOT NULL,
+  `hora_termino` time NOT NULL,
+  `duracao` int(11) NOT NULL,
   `domingo` int(11) NOT NULL DEFAULT 0,
   `segunda` int(11) NOT NULL DEFAULT 0,
   `terca` int(11) NOT NULL DEFAULT 0,
   `quarta` int(11) NOT NULL DEFAULT 0,
   `quinta` int(11) NOT NULL DEFAULT 0,
   `sexta` int(11) NOT NULL DEFAULT 0,
-  `sabado` int(11) NOT NULL DEFAULT 0
+  `sabado` int(11) NOT NULL DEFAULT 0,
+  `cor` varchar(7) DEFAULT '#3465a4',
+  PRIMARY KEY (`id`),
+  KEY `fk_agenda` (`id_agenda`),
+  CONSTRAINT `fk_agenda` FOREIGN KEY (`id_agenda`) REFERENCES `agenda` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
-
---
--- Despejando dados para a tabela `rotinas`
---
-
-INSERT INTO `rotinas` (`id`, `id_agenda`, `data_inicio`, `data_termino`, `hora_inicio`, `hora_termino`, `duracao`, `domingo`, `segunda`, `terca`, `quarta`, `quinta`, `sexta`, `sabado`) VALUES
-(14, 21, '2026-05-02', '2026-05-30', '08:00:00', '18:00:00', 60, 0, 1, 0, 1, 0, 1, 0),
-(15, 21, '2026-05-01', '2026-05-30', '13:00:00', '17:00:00', 30, 0, 0, 1, 0, 1, 0, 0);
-
--- --------------------------------------------------------
-
---
--- Estrutura para tabela `users`
---
-
-CREATE TABLE `users` (
-  `id` int(11) NOT NULL,
-  `nome` varchar(140) NOT NULL,
-  `email` varchar(140) NOT NULL,
-  `senha` varchar(255) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
-
---
--- Despejando dados para a tabela `users`
---
-
-INSERT INTO `users` (`id`, `nome`, `email`, `senha`) VALUES
-(7, 'Teste', 'teste@teste.com', 'teste');
-
---
--- Índices para tabelas despejadas
---
-
---
--- Índices de tabela `agenda`
---
-ALTER TABLE `agenda`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `fk_user` (`id_user`);
-
---
--- Índices de tabela `rotinas`
---
-ALTER TABLE `rotinas`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `fk_agenda` (`id_agenda`);
-
---
--- Índices de tabela `users`
---
-ALTER TABLE `users`
-  ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `email` (`email`),
-  ADD UNIQUE KEY `email_2` (`email`);
-
---
--- AUTO_INCREMENT para tabelas despejadas
---
-
---
--- AUTO_INCREMENT de tabela `agenda`
---
-ALTER TABLE `agenda`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=22;
-
---
--- AUTO_INCREMENT de tabela `rotinas`
---
-ALTER TABLE `rotinas`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
-
---
--- AUTO_INCREMENT de tabela `users`
---
-ALTER TABLE `users`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
-
-
--- Restrições para tabelas `agenda`
---
-ALTER TABLE `agenda`
-  ADD CONSTRAINT `fk_user` FOREIGN KEY (`id_user`) REFERENCES `users` (`id`);
-
-
-ALTER TABLE `rotinas`
-  ADD CONSTRAINT `fk_agenda` FOREIGN KEY (`id_agenda`) REFERENCES `agenda` (`id`);
-COMMIT;
 
 CREATE TABLE `excessoes` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `id_agenda` int(11) NOT NULL FOREIGN KEY REFERENCES `agenda`(`id`),
+  `id_agenda` int(11) NOT NULL,
+  `data` date NOT NULL,
+  `data_termino` date DEFAULT NULL,
+  `hora_inicio` time NOT NULL,
+  `hora_termino` time NOT NULL,
+  `domingo` int(11) NOT NULL DEFAULT 0,
+  `segunda` int(11) NOT NULL DEFAULT 0,
+  `terca` int(11) NOT NULL DEFAULT 0,
+  `quarta` int(11) NOT NULL DEFAULT 0,
+  `quinta` int(11) NOT NULL DEFAULT 0,
+  `sexta` int(11) NOT NULL DEFAULT 0,
+  `sabado` int(11) NOT NULL DEFAULT 0,
+  `tipo` enum('bloqueado','reservado') NOT NULL DEFAULT 'bloqueado',
+  PRIMARY KEY (`id`),
+  KEY `excessoes_agenda` (`id_agenda`),
+  CONSTRAINT `excessoes_agenda` FOREIGN KEY (`id_agenda`) REFERENCES `agenda` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
+
+CREATE TABLE `agendamentos` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `id_agenda` int(11) NOT NULL,
   `data` date NOT NULL,
   `hora_inicio` time NOT NULL,
-  `hora_termino` time NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+  `hora_fim` time NOT NULL,
+  `cliente_nome` varchar(240) DEFAULT NULL,
+  `token` varchar(20) NOT NULL,
+  `status` enum('pendente','confirmado','cancelado','realizado') DEFAULT 'pendente',
+  `criado_em` datetime DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `token` (`token`),
+  KEY `fk_agendamento_agenda` (`id_agenda`),
+  CONSTRAINT `fk_agendamento_agenda` FOREIGN KEY (`id_agenda`) REFERENCES `agenda` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
+
+CREATE TABLE `reset_tokens` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `id_user` int(11) NOT NULL,
+  `token` varchar(64) NOT NULL,
+  `expira_em` datetime NOT NULL,
+  `usado` tinyint(1) DEFAULT 0,
+  `criado_em` datetime DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `fk_reset_user` (`id_user`),
+  CONSTRAINT `fk_reset_user` FOREIGN KEY (`id_user`) REFERENCES `users` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
