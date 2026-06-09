@@ -1,8 +1,17 @@
 <?php
-    session_start();
+    require_once('protect.php');
     include('conexao.php');
+    header('Content-Type: application/json');
+
+    verificarCSRF();
 
     $id_agenda = (int)$_POST['id_agenda'];
+
+    if (!usuarioDono($mysqli, 'rotinas', $id_agenda, 'id_agenda')) {
+        echo json_encode(['success' => false, 'message' => 'Acesso negado.']);
+        exit;
+    }
+
     $id_rotina = isset($_POST['id_rotina']) ? (int)$_POST['id_rotina'] : 0;
     $force = isset($_POST['force']) && $_POST['force'] === '1';
 
@@ -21,38 +30,64 @@
     $sexta = (int)($_POST['sexta'] ?? 0);
     $sabado = (int)($_POST['sabado'] ?? 0);
 
-    $check_sql = "SELECT id FROM rotinas WHERE id_agenda = '$id_agenda'
-                  AND id != '$id_rotina'
-                  AND data_inicio <= '$data_termino' AND data_termino >= '$data_inicio'
-                  AND hora_inicio < '$hora_termino' AND hora_termino > '$hora_inicio'
+    $check_sql = "SELECT id FROM rotinas WHERE id_agenda = ?
+                  AND id != ?
+                  AND data_inicio <= ? AND data_termino >= ?
+                  AND hora_inicio < ? AND hora_termino > ?
                   AND (
-                      (domingo = 1 AND $domingo = 1) OR (segunda = 1 AND $segunda = 1) OR
-                      (terca = 1 AND $terca = 1) OR (quarta = 1 AND $quarta = 1) OR
-                      (quinta = 1 AND $quinta = 1) OR (sexta = 1 AND $sexta = 1) OR
-                      (sabado = 1 AND $sabado = 1)
+                      (domingo = 1 AND ? = 1) OR (segunda = 1 AND ? = 1) OR
+                      (terca = 1 AND ? = 1) OR (quarta = 1 AND ? = 1) OR
+                      (quinta = 1 AND ? = 1) OR (sexta = 1 AND ? = 1) OR
+                      (sabado = 1 AND ? = 1)
                   )";
 
-    $conflitos = $mysqli->query($check_sql);
+    $stmt = $mysqli->prepare($check_sql);
+    $stmt->bind_param('iissssiiiiiiii',
+        $id_agenda, $id_rotina, $data_termino, $data_inicio,
+        $hora_termino, $hora_inicio,
+        $domingo, $segunda, $terca, $quarta, $quinta, $sexta, $sabado
+    );
+    $stmt->execute();
+    $conflitos = $stmt->get_result();
 
     if ($conflitos->num_rows > 0 && !$force) {
-        echo json_encode(['success' => false, 'conflict' => true, 'message' => 'Esta rotina conflita com horários já existentes. Deseja continuar mesmo assim?']);
+        echo json_encode(['success' => false, 'conflict' => true, 'message' => 'Esta rotina conflita com horarios ja existentes. Deseja continuar mesmo assim?']);
         exit;
     }
 
     if ($id_rotina > 0) {
-        $sql = "UPDATE rotinas SET
-                data_inicio='$data_inicio', data_termino='$data_termino',
-                hora_inicio='$hora_inicio', hora_termino='$hora_termino',
-                duracao='$duracao', cor='$cor',
-                domingo='$domingo', segunda='$segunda', terca='$terca',
-                quarta='$quarta', quinta='$quinta', sexta='$sexta', sabado='$sabado'
-                WHERE id='$id_rotina'";
+        $stmt = $mysqli->prepare("UPDATE rotinas SET
+                data_inicio=?, data_termino=?,
+                hora_inicio=?, hora_termino=?,
+                duracao=?, cor=?,
+                domingo=?, segunda=?, terca=?,
+                quarta=?, quinta=?, sexta=?, sabado=?
+                WHERE id=?");
+        $stmt->bind_param('ssssisiiiiiiii',
+            $data_inicio, $data_termino,
+            $hora_inicio, $hora_termino,
+            $duracao, $cor,
+            $domingo, $segunda, $terca,
+            $quarta, $quinta, $sexta, $sabado,
+            $id_rotina
+        );
     } else {
-        $sql = "INSERT INTO rotinas (id_agenda,data_inicio,data_termino,hora_inicio,hora_termino,duracao,domingo,segunda,terca,quarta,quinta,sexta,sabado,cor)
-                VALUES ('$id_agenda','$data_inicio','$data_termino','$hora_inicio','$hora_termino','$duracao','$domingo','$segunda','$terca','$quarta','$quinta','$sexta','$sabado','$cor')";
+        $stmt = $mysqli->prepare("INSERT INTO rotinas
+                (id_agenda,data_inicio,data_termino,hora_inicio,hora_termino,duracao,
+                 domingo,segunda,terca,quarta,quinta,sexta,sabado,cor)
+                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
+        $stmt->bind_param('issssiiiiiiiii',
+            $id_agenda,
+            $data_inicio, $data_termino,
+            $hora_inicio, $hora_termino,
+            $duracao,
+            $domingo, $segunda, $terca,
+            $quarta, $quinta, $sexta, $sabado,
+            $cor
+        );
     }
 
-    $mysqli->query($sql);
+    $stmt->execute();
 
     echo json_encode(['success' => true]);
     exit;

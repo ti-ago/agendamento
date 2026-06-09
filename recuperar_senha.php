@@ -1,33 +1,39 @@
 <?php
 include('conexao.php');
+require_once('includes/security.php');
+configurarSessao();
 
 $mensagem = '';
 $erro = '';
 
 if (isset($_POST['email'])) {
-    $email = $mysqli->real_escape_string(trim($_POST['email']));
-    $query = $mysqli->query("SELECT id, nome FROM users WHERE email = '$email'");
-
-    if ($query && $query->num_rows == 1) {
-        $user = $query->fetch_assoc();
-        $token = bin2hex(random_bytes(32));
-        $id_user = (int)$user['id'];
-        $expira = date('Y-m-d H:i:s', strtotime('+1 hour'));
-
-        $mysqli->query("INSERT INTO reset_tokens (id_user, token, expira_em) VALUES ($id_user, '$token', '$expira')");
-
-        $link_redefinir = (isset($_SERVER['HTTPS']) ? 'https' : 'http') . '://' . $_SERVER['HTTP_HOST'] . '/agendamento/redefinir_senha.php?token=' . $token;
-        $assunto = 'Recuperacao de Senha - Facilite';
-        $corpo = "Ola {$user['nome']},\n\nRecebemos uma solicitacao de recuperacao de senha.\nClique no link abaixo para redefinir sua senha:\n$link_redefinir\n\nEste link e valido por 1 hora.\n\nSe voce nao solicitou esta recuperacao, ignore este e-mail.\n\nAtenciosamente,\nEquipe Facilite";
-
-        require_once 'includes/email.php';
-        if (enviarEmail($email, $assunto, $corpo)) {
-            $mensagem = 'Enviamos um link de recuperacao para seu e-mail.';
-        } else {
-            $erro = 'Erro ao enviar e-mail. Tente novamente.';
-        }
+    if (!validarTokenCSRF($_POST['_csrf_token'] ?? '')) {
+        $erro = 'Token CSRF invalido.';
     } else {
-        $erro = 'E-mail nao encontrado em nossa base.';
+        $email = $mysqli->real_escape_string(trim($_POST['email']));
+        $query = $mysqli->query("SELECT id, nome FROM users WHERE email = '$email'");
+
+        if ($query && $query->num_rows == 1) {
+            $user = $query->fetch_assoc();
+            $token = bin2hex(random_bytes(32));
+            $id_user = (int)$user['id'];
+            $expira = date('Y-m-d H:i:s', strtotime('+1 hour'));
+
+            $mysqli->query("INSERT INTO reset_tokens (id_user, token, expira_em) VALUES ($id_user, '$token', '$expira')");
+
+            $link_redefinir = (isset($_SERVER['HTTPS']) ? 'https' : 'http') . '://' . $_SERVER['HTTP_HOST'] . '/agendamento/redefinir_senha.php?token=' . $token;
+            $assunto = 'Recuperacao de Senha - Facilite';
+            $corpo = "Ola {$user['nome']},\n\nRecebemos uma solicitacao de recuperacao de senha.\nClique no link abaixo para redefinir sua senha:\n$link_redefinir\n\nEste link e valido por 1 hora.\n\nSe voce nao solicitou esta recuperacao, ignore este e-mail.\n\nAtenciosamente,\nEquipe Facilite";
+
+            require_once 'includes/email.php';
+            if (enviarEmail($email, $assunto, $corpo)) {
+                $mensagem = 'Enviamos um link de recuperacao para seu e-mail.';
+            } else {
+                $erro = 'Erro ao enviar e-mail. Tente novamente.';
+            }
+        } else {
+            $erro = 'E-mail nao encontrado em nossa base.';
+        }
     }
 }
 ?>
@@ -103,6 +109,7 @@ if (isset($_POST['email'])) {
 
         <?php if (!$mensagem): ?>
         <form action="" method="POST">
+            <?= campoCSRF() ?>
             <div class="form-group">
                 <label for="email">E-mail</label>
                 <input type="email" name="email" id="email" placeholder="seu@email.com" required>

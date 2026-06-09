@@ -1,8 +1,7 @@
 <?php
+require_once('protect.php');
 require_once('conexao.php');
 require_once('includes/helpers.php');
-
-session_start();
 
 $id_agenda = (int)($_GET['id'] ?? 0);
 if (!$id_agenda) {
@@ -10,8 +9,11 @@ if (!$id_agenda) {
     die('Agenda nao especificada.');
 }
 
-$query = $mysqli->query("SELECT servico, nome_profissional FROM agenda WHERE id = '$id_agenda'");
-$agenda = $query->fetch_assoc();
+$id_usuario = (int)$_SESSION['id'];
+$stmt = $mysqli->prepare("SELECT servico, nome_profissional FROM agenda WHERE id = ? AND id_user = ?");
+$stmt->bind_param('ii', $id_agenda, $id_usuario);
+$stmt->execute();
+$agenda = $stmt->get_result()->fetch_assoc();
 if (!$agenda) {
     header('Content-Type: text/plain; charset=utf-8');
     die('Agenda nao encontrada.');
@@ -19,7 +21,10 @@ if (!$agenda) {
 
 // Carregar todas as excessoes (bloqueios)
 $bloqueios = [];
-$exc = $mysqli->query("SELECT * FROM excessoes WHERE id_agenda = '$id_agenda'");
+$stmt = $mysqli->prepare("SELECT * FROM excessoes WHERE id_agenda = ?");
+$stmt->bind_param('i', $id_agenda);
+$stmt->execute();
+$exc = $stmt->get_result();
 while ($e = $exc->fetch_assoc()) {
     $is_recurring = $e['domingo'] || $e['segunda'] || $e['terca'] || $e['quarta'] || $e['quinta'] || $e['sexta'] || $e['sabado'];
 
@@ -77,7 +82,10 @@ function estaBloqueado(DateTime $inicio, DateTime $fim, array $bloqueios): bool 
 
 $eventos = [];
 
-$rotinas = $mysqli->query("SELECT * FROM rotinas WHERE id_agenda = '$id_agenda'");
+$stmt = $mysqli->prepare("SELECT * FROM rotinas WHERE id_agenda = ?");
+$stmt->bind_param('i', $id_agenda);
+$stmt->execute();
+$rotinas = $stmt->get_result();
 while ($r = $rotinas->fetch_assoc()) {
     $data_inicio = new DateTime($r['data_inicio']);
     $data_final = new DateTime($r['data_termino']);

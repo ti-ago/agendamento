@@ -1,11 +1,15 @@
 <?php
-    session_start();
+    require_once('protect.php');
     include('conexao.php');
 
-    $usuario = $_SESSION['nome'];
-    $id_usuario = $_SESSION['id'];
+    $usuario = htmlspecialchars($_SESSION['nome']);
+    $id_usuario = (int)$_SESSION['id'];
 
     if(isset($_POST['servico'])){
+        if (!isset($_POST['_csrf_token']) || !validarTokenCSRF($_POST['_csrf_token'])) {
+            echo 'Token CSRF invalido.';
+            exit;
+        }
         if(strlen(trim($_POST['servico'])) == 0) {
             echo "Preencha o serviço";
         } else {
@@ -23,18 +27,15 @@
         }
     }
 
-
-    $sql = "SELECT agenda.servico FROM agenda 
-        INNER JOIN users ON agenda.id_user = users.id 
-        WHERE users.nome = '$usuario'";
+    $sql = "SELECT agenda.servico FROM agenda
+        INNER JOIN users ON agenda.id_user = users.id
+        WHERE users.id = '$id_usuario'";
 
         $resultado = $mysqli->query($sql);
-
         $listaServicos = [];
 
         if ($resultado) {
             while ($linha = $resultado->fetch_assoc()) {
-                // Adicionamos cada serviço ao final do array
                 $listaServicos[] = $linha['servico'];
             }
         }
@@ -48,22 +49,21 @@
 </head>
 <body>
     <p>
-        <?php
-            echo $usuario;
-        ?>
+        <?php echo $usuario; ?>
     </p>
     <form action="" method="POST">
+        <?php require_once('includes/security.php'); echo campoCSRF(); ?>
         <p>
             <label for="servico">Escolha um serviço ou digite um novo:</label>
             <input list="servicos" id="servico" name="servico" placeholder="Selecione ou digite..." autocomplete="off">
             <datalist id="servicos">
-                <?php 
+                <?php
                     foreach ($listaServicos as $servico):
                 ?>
                     <option value="<?php echo htmlspecialchars($servico); ?>">
-                <?php 
-                    endforeach; 
-                ?>  
+                <?php
+                    endforeach;
+                ?>
             </datalist>
         </p>
         <p>
@@ -72,6 +72,6 @@
         <div>
             <a href="painel.php">Voltar ao Painel</a>
         </div>
-    </form>   
+    </form>
 </body>
 </html>

@@ -1,0 +1,7 @@
+<Files ".env">
+    Require all denied
+</Files>
+
+<Files "login.sql">
+    Require all denied
+</Files>

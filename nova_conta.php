@@ -1,18 +1,22 @@
 <?php
 include('conexao.php');
+require_once('includes/security.php');
+configurarSessao();
 
 $mensagem = '';
 $erro = '';
 
 if(isset($_POST['email']) && isset($_POST['nome']) && isset($_POST['senha']) && isset($_POST['confirmacao'])){
 
-    if(strlen(trim($_POST['email'])) == 0) {
+    if (!validarTokenCSRF($_POST['_csrf_token'] ?? '')) {
+        $erro = 'Token CSRF invalido.';
+    } elseif(strlen(trim($_POST['email'])) == 0) {
         $erro = 'Preencha seu e-mail';
-    } else if(strlen(trim($_POST['nome'])) == 0) {
+    } elseif(strlen(trim($_POST['nome'])) == 0) {
         $erro = 'Preencha seu nome';
-    } else if(strlen(trim($_POST['senha'])) < 6) {
+    } elseif(strlen(trim($_POST['senha'])) < 6) {
         $erro = 'A senha deve ter pelo menos 6 caracteres';
-    } else if(trim($_POST['confirmacao']) != trim($_POST['senha'])) {
+    } elseif(trim($_POST['confirmacao']) != trim($_POST['senha'])) {
         $erro = 'A confirmacao deve ser igual a senha';
     } else {
         $email = $mysqli->real_escape_string(trim($_POST['email']));
@@ -127,6 +131,7 @@ if(isset($_POST['email']) && isset($_POST['nome']) && isset($_POST['senha']) && 
 
         <?php if (!$mensagem): ?>
         <form action="" method="POST">
+            <?= campoCSRF() ?>
             <div class="form-group">
                 <label for="nome">Nome</label>
                 <input type="text" name="nome" id="nome" placeholder="Seu nome" required>

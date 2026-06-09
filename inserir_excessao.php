@@ -1,13 +1,20 @@
 <?php
-    session_start();
+    require_once('protect.php');
     include('conexao.php');
+    header('Content-Type: application/json');
+
+    verificarCSRF();
 
     $id_agenda = (int)$_POST['id_agenda'];
+
+    if (!usuarioDono($mysqli, 'excessoes', $id_agenda, 'id_agenda')) {
+        echo json_encode(['success' => false, 'message' => 'Acesso negado.']);
+        exit;
+    }
+
     $id_excessao = isset($_POST['id_excessao']) ? (int)$_POST['id_excessao'] : 0;
 
-    $data = new DateTime($_POST['data']);
-    $data = $data->format('Y-m-d');
-
+    $data = (new DateTime($_POST['data']))->format('Y-m-d');
     $data_termino = !empty($_POST['data_termino'])
         ? (new DateTime($_POST['data_termino']))->format('Y-m-d')
         : null;
@@ -23,24 +30,35 @@
     $sexta    = (int)($_POST['sexta'] ?? 0);
     $sabado   = (int)($_POST['sabado'] ?? 0);
 
-    $data_termino_val = $data_termino ? "'$data_termino'" : "NULL";
-
     if ($id_excessao > 0) {
-        $sql = "UPDATE excessoes SET
-                data='$data', data_termino=$data_termino_val,
-                hora_inicio='$hora_inicio', hora_termino='$hora_termino',
-                domingo='$domingo', segunda='$segunda', terca='$terca',
-                quarta='$quarta', quinta='$quinta', sexta='$sexta', sabado='$sabado'
-                WHERE id='$id_excessao'";
+        $stmt = $mysqli->prepare("UPDATE excessoes SET
+                data=?, data_termino=?,
+                hora_inicio=?, hora_termino=?,
+                domingo=?, segunda=?, terca=?,
+                quarta=?, quinta=?, sexta=?, sabado=?
+                WHERE id=?");
+        $stmt->bind_param('ssssiiiiiiii',
+            $data, $data_termino,
+            $hora_inicio, $hora_termino,
+            $domingo, $segunda, $terca,
+            $quarta, $quinta, $sexta, $sabado,
+            $id_excessao
+        );
     } else {
-        $sql = "INSERT INTO excessoes
-                (id_agenda,data,data_termino,hora_inicio,hora_termino,domingo,segunda,terca,quarta,quinta,sexta,sabado)
-                VALUES ('$id_agenda','$data',$data_termino_val,'$hora_inicio','$hora_termino',
-                '$domingo','$segunda','$terca','$quarta','$quinta','$sexta','$sabado')";
+        $stmt = $mysqli->prepare("INSERT INTO excessoes
+                (id_agenda,data,data_termino,hora_inicio,hora_termino,
+                 domingo,segunda,terca,quarta,quinta,sexta,sabado)
+                VALUES (?,?,?,?,?,?,?,?,?,?,?,?)");
+        $stmt->bind_param('issssiiiiiiii',
+            $id_agenda,
+            $data, $data_termino,
+            $hora_inicio, $hora_termino,
+            $domingo, $segunda, $terca,
+            $quarta, $quinta, $sexta, $sabado
+        );
     }
 
-    $mysqli->query($sql);
+    $stmt->execute();
 
     echo json_encode(['success' => true]);
     exit;
-?>

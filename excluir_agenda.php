@@ -1,19 +1,22 @@
 <?php
-require_once('conexao.php');
-session_start();
-
+require_once('protect.php');
+include('conexao.php');
 header('Content-Type: application/json');
 
-$id = (int)($_POST['id'] ?? 0);
-$usuario = $_SESSION['nome'] ?? '';
+verificarCSRF();
 
-if (!$id || !$usuario) {
+$id = (int)($_POST['id'] ?? 0);
+$id_usuario = (int)$_SESSION['id'];
+
+if (!$id) {
     echo json_encode(['success' => false, 'message' => 'Parametros invalidos.']);
     exit;
 }
 
-$ag = $mysqli->query("SELECT id FROM agenda WHERE id = '$id' AND id_user = (SELECT id FROM users WHERE nome = '$usuario')");
-if (!$ag || $ag->num_rows === 0) {
+$stmt = $mysqli->prepare("SELECT id FROM agenda WHERE id = ? AND id_user = ?");
+$stmt->bind_param('ii', $id, $id_usuario);
+$stmt->execute();
+if ($stmt->get_result()->num_rows === 0) {
     echo json_encode(['success' => false, 'message' => 'Agenda nao encontrada ou sem permissao.']);
     exit;
 }

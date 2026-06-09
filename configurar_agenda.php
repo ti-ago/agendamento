@@ -1,11 +1,10 @@
 <?php
-    session_start();
+    require_once('protect.php');
     include('conexao.php');
     require_once('includes/helpers.php');
 
     $usuario = $_SESSION['nome'];
     $id_usuario = $_SESSION['id'];
-
     $eventos=[];
     $lista_excessoes=[];
     $lista_excessoes_formatada=[];
@@ -18,6 +17,7 @@
 
     // Save agenda config
     if (isset($_POST['salvar_config']) && isset($_POST['id_agenda_config'])) {
+        verificarCSRF();
         $id_ac = (int)$_POST['id_agenda_config'];
         $novo_servico = $mysqli->real_escape_string($_POST['servico_nome']);
         $novo_prof = $mysqli->real_escape_string($_POST['nome_profissional']);
@@ -27,8 +27,17 @@
 
         $sql_up = "UPDATE agenda SET servico='$novo_servico', nome_profissional='$novo_prof', chave_pix='$nova_chave_pix', valor=$novo_valor";
         if (!empty($_FILES['foto_profissional']['name'])) {
-            $ext = strtolower(pathinfo($_FILES['foto_profissional']['name'], PATHINFO_EXTENSION));
-            if (in_array($ext, ['jpg','jpeg','png','webp'])) {
+            $finfo = finfo_open(FILEINFO_MIME_TYPE);
+            $mime = finfo_file($finfo, $_FILES['foto_profissional']['tmp_name']);
+            finfo_close($finfo);
+            $mimes_validos = ['image/jpeg', 'image/png', 'image/webp'];
+            $tamanho_max = 2 * 1024 * 1024;
+            if (in_array($mime, $mimes_validos) && $_FILES['foto_profissional']['size'] <= $tamanho_max) {
+                $ext = match($mime) {
+                    'image/jpeg' => 'jpg',
+                    'image/png'  => 'png',
+                    'image/webp' => 'webp',
+                };
                 $nome_foto = 'prof_' . $id_ac . '_' . time() . '.' . $ext;
                 move_uploaded_file($_FILES['foto_profissional']['tmp_name'], 'images/' . $nome_foto);
                 $sql_up .= ", foto_profissional='$nome_foto'";
@@ -42,6 +51,7 @@
     }
 
     if(isset($_POST['agenda'])){
+        verificarCSRF();
         if(strlen(trim($_POST['agenda'])) == 0) {
             echo "Selecione uma agenda";
         } else {
@@ -357,6 +367,7 @@
             </div>
 
             <form action="" method="POST" id="formSelecionarAgenda">
+                <?= campoCSRF() ?>
                 <label for="agenda">Agenda:</label>
                 <select name="agenda" id="agenda" onchange="this.form.submit()">
                     <option value="" disabled <?php if(!$agenda_selecionada) echo 'selected'; ?>>Selecione...</option>
@@ -391,6 +402,7 @@
                     <form method="POST" enctype="multipart/form-data" id="formConfigAgenda">
                         <input type="hidden" name="salvar_config" value="1">
                         <input type="hidden" name="id_agenda_config" value="<?= $id_final ?>">
+                        <?= campoCSRF() ?>
                         <label style="font-size:0.75rem; font-weight:500;">Nome do Serviço</label>
                         <input type="text" name="servico_nome" value="<?= htmlspecialchars($agenda_config['servico'] ?? '') ?>"
                                style="width:100%; padding:6px 8px; border:1px solid #ccc; border-radius:4px; font-size:0.8rem; margin-bottom:8px;">
@@ -533,7 +545,7 @@
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.20/index.global.min.js"></script>
 <script>
     let calendar;
-    const agendaAtual = "<?php echo $agenda_selecionada; ?>";
+    const agendaAtual = <?php echo json_encode($agenda_selecionada, JSON_HEX_TAG | JSON_HEX_AMP); ?>;
 
     document.addEventListener('DOMContentLoaded', function() {
         const calendarEl = document.getElementById('calendar');

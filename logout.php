@@ -1,10 +1,8 @@
 <?php
-if(!isset($_SESSION)) {
-    session_start();
-}
+require_once('includes/security.php');
+configurarSessao();
 
+$_SESSION = [];
 session_destroy();
 
 header("Location: index.php");
-
-?>

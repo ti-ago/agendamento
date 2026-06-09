@@ -1,5 +1,5 @@
 <?php
-    session_start();
+    require_once('protect.php');
     include('conexao.php');
     require_once('includes/helpers.php');
 
@@ -18,6 +18,7 @@
 
     // Save agenda config
     if (isset($_POST['salvar_config']) && isset($_POST['id_agenda_config'])) {
+        verificarCSRF();
         $id_ac = (int)$_POST['id_agenda_config'];
         $novo_servico = $mysqli->real_escape_string($_POST['servico_nome']);
         $novo_prof = $mysqli->real_escape_string($_POST['nome_profissional']);
@@ -27,8 +28,17 @@
 
         $sql_up = "UPDATE agenda SET servico='$novo_servico', nome_profissional='$novo_prof', chave_pix='$nova_chave_pix', valor=$novo_valor";
         if (!empty($_FILES['foto_profissional']['name'])) {
-            $ext = strtolower(pathinfo($_FILES['foto_profissional']['name'], PATHINFO_EXTENSION));
-            if (in_array($ext, ['jpg','jpeg','png','webp'])) {
+            $finfo = finfo_open(FILEINFO_MIME_TYPE);
+            $mime = finfo_file($finfo, $_FILES['foto_profissional']['tmp_name']);
+            finfo_close($finfo);
+            $mimes_validos = ['image/jpeg', 'image/png', 'image/webp'];
+            $tamanho_max = 2 * 1024 * 1024; // 2MB
+            if (in_array($mime, $mimes_validos) && $_FILES['foto_profissional']['size'] <= $tamanho_max) {
+                $ext = match($mime) {
+                    'image/jpeg' => 'jpg',
+                    'image/png'  => 'png',
+                    'image/webp' => 'webp',
+                };
                 $nome_foto = 'prof_' . $id_ac . '_' . time() . '.' . $ext;
                 move_uploaded_file($_FILES['foto_profissional']['tmp_name'], 'images/' . $nome_foto);
                 $sql_up .= ", foto_profissional='$nome_foto'";
@@ -44,6 +54,7 @@
     }
 
     if (isset($_POST['nova_agenda'])) {
+        verificarCSRF();
         $novo_servico = $mysqli->real_escape_string(trim($_POST['novo_servico_nome']));
         if (strlen($novo_servico) > 0) {
             $check = $mysqli->query("SELECT id FROM agenda WHERE servico='$novo_servico' AND id_user='$id_usuario'");
@@ -59,6 +70,7 @@
     }
 
     if(isset($_POST['agenda'])){
+        verificarCSRF();
         if(strlen(trim($_POST['agenda'])) == 0) {
             echo "Selecione uma agenda";
         } else {
@@ -521,6 +533,7 @@
                 <!-- Tab: Rotinas e Exceções -->
                 <div class="tab-panel active" id="panel-rotinas">
                     <form action="" method="POST" id="formSelecionarAgenda">
+                        <?= campoCSRF() ?>
                         <label for="agenda">Selecione a Agenda:</label>
                         <select name="agenda" id="agenda" onchange="this.form.submit()">
                             <option value="" disabled <?php if(!$agenda_selecionada) echo 'selected'; ?>>Selecione...</option>
@@ -583,6 +596,7 @@
                         <form method="POST" enctype="multipart/form-data">
                             <input type="hidden" name="salvar_config" value="1">
                             <input type="hidden" name="id_agenda_config" value="<?= $id_final ?>">
+                            <?= campoCSRF() ?>
 
                             <div class="config-section">
                                 <label>Nome do Serviço</label>
@@ -680,6 +694,7 @@
             <form id="formRotina" onsubmit="enviarFormulario(event, 'inserir_rotina.php')">
                 <input type="hidden" name="id_agenda" value="<?php echo $id_final?>">
                 <input type="hidden" name="id_rotina" id="edit_id_rotina" value="0">
+                <?= campoCSRF() ?>
 
                 <label>Período</label>
                 <div style="display:flex; gap:5px;">
@@ -728,6 +743,7 @@
             <form id="formExcessao" onsubmit="enviarFormulario(event, 'inserir_excessao.php')">
                 <input type="hidden" name="id_agenda" value="<?php echo $id_final?>">
                 <input type="hidden" name="id_excessao" id="edit_id_excessao" value="0">
+                <?= campoCSRF() ?>
                 <label>Data Início</label>
                 <input type="date" name="data" id="edit_exc_data" required style="width:100%; padding:8px; font-size:0.85rem; border:1px solid #bbb; border-radius:4px;">
                 <label>Data Fim <small>(opcional — para recorrência)</small></label>
@@ -766,7 +782,8 @@
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.20/index.global.min.js"></script>
 <script>
     let calendar;
-    const agendaAtual = "<?php echo $agenda_selecionada; ?>";
+    const csrfToken = document.querySelector('input[name="_csrf_token"]')?.value || '';
+    const agendaAtual = <?php echo json_encode($agenda_selecionada, JSON_HEX_TAG | JSON_HEX_AMP); ?>;
 
     // Tab switching
     document.querySelectorAll('.sidebar-tab').forEach(tab => {
@@ -940,7 +957,9 @@
     async function recarregarDados() {
         if (!agendaAtual) return;
 
-        const params = new URLSearchParams({'agenda': agendaAtual});
+        const params = new URLSearchParams();
+        params.append('agenda', agendaAtual);
+        params.append('_csrf_token', csrfToken);
         const response = await fetch(`painel.php?ajax_load=1`, {
             method: 'POST',
             body: params
@@ -1021,9 +1040,12 @@
 
     async function excluirItem(id, tipo) {
         if(!confirm(`Excluir esta ${tipo}?`)) return;
-        const url = tipo === 'rotina' ? `excluir_rotina.php?id=${id}` : `excluir_excessao.php?id=${id}`;
+        const params = new URLSearchParams();
+        params.append('id', id);
+        params.append('_csrf_token', csrfToken);
+        const url = tipo === 'rotina' ? 'excluir_rotina.php' : 'excluir_excessao.php';
         try {
-            const response = await fetch(url);
+            const response = await fetch(url, { method: 'POST', body: params });
             const result = await response.json();
             if (result.success) await recarregarDados();
         } catch (error) {
@@ -1038,6 +1060,7 @@
         const params = new URLSearchParams();
         params.append('id', id);
         params.append('acao', acao);
+        params.append('_csrf_token', csrfToken);
 
         try {
             const response = await fetch('acao_agendamento.php', { method: 'POST', body: params });
@@ -1057,6 +1080,7 @@
 
         const params = new URLSearchParams();
         params.append('id', id);
+        params.append('_csrf_token', csrfToken);
 
         try {
             const response = await fetch('excluir_agenda.php', { method: 'POST', body: params });

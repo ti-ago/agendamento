@@ -1,5 +1,7 @@
 <?php
 include('conexao.php');
+require_once('includes/security.php');
+configurarSessao();
 
 $mensagem = '';
 $erro = '';
@@ -18,29 +20,38 @@ if (isset($_GET['token'])) {
 }
 
 if (isset($_POST['token']) && isset($_POST['senha']) && isset($_POST['confirmacao'])) {
-    $token = $mysqli->real_escape_string($_POST['token']);
-    $senha = $_POST['senha'];
-    $confirmacao = $_POST['confirmacao'];
-
-    if (strlen($senha) < 6) {
-        $erro = 'A senha deve ter pelo menos 6 caracteres';
-    } elseif ($senha !== $confirmacao) {
-        $erro = 'As senhas nao conferem';
+    if (!validarTokenCSRF($_POST['_csrf_token'] ?? '')) {
+        $erro = 'Token CSRF invalido.';
     } else {
-        $query = $mysqli->query("SELECT id_user FROM reset_tokens WHERE token = '$token' AND usado = 0 AND expira_em > NOW()");
+        $token = $mysqli->real_escape_string($_POST['token']);
+        $senha = $_POST['senha'];
+        $confirmacao = $_POST['confirmacao'];
 
-        if ($query && $query->num_rows == 1) {
-            $row = $query->fetch_assoc();
-            $id_user = (int)$row['id_user'];
-            $senha_hash = password_hash($senha, PASSWORD_BCRYPT);
-
-            $mysqli->query("UPDATE users SET senha_hash = '$senha_hash', senha = '' WHERE id = $id_user");
-            $mysqli->query("UPDATE reset_tokens SET usado = 1 WHERE token = '$token'");
-
-            $mensagem = 'Senha redefinida com sucesso! Faca login com sua nova senha.';
-            $token_valido = false;
+        if (strlen($senha) < 6) {
+            $erro = 'A senha deve ter pelo menos 6 caracteres';
+        } elseif ($senha !== $confirmacao) {
+            $erro = 'As senhas nao conferem';
         } else {
-            $erro = 'Token invalido ou expirado.';
+            $query = $mysqli->query("SELECT id_user FROM reset_tokens WHERE token = '$token' AND usado = 0 AND expira_em > NOW()");
+
+            if ($query && $query->num_rows == 1) {
+                $row = $query->fetch_assoc();
+                $id_user = (int)$row['id_user'];
+                $senha_hash = password_hash($senha, PASSWORD_BCRYPT);
+
+                $stmt = $mysqli->prepare("UPDATE users SET senha_hash = ?, senha = '' WHERE id = ?");
+                $stmt->bind_param('si', $senha_hash, $id_user);
+                $stmt->execute();
+
+                $stmt = $mysqli->prepare("UPDATE reset_tokens SET usado = 1 WHERE token = ?");
+                $stmt->bind_param('s', $token);
+                $stmt->execute();
+
+                $mensagem = 'Senha redefinida com sucesso! Faca login com sua nova senha.';
+                $token_valido = false;
+            } else {
+                $erro = 'Token invalido ou expirado.';
+            }
         }
     }
 }
@@ -117,6 +128,7 @@ if (isset($_POST['token']) && isset($_POST['senha']) && isset($_POST['confirmaca
 
         <?php if ($token_valido): ?>
         <form action="" method="POST">
+            <?= campoCSRF() ?>
             <input type="hidden" name="token" value="<?= htmlspecialchars($token) ?>">
             <div class="form-group">
                 <label for="senha">Nova Senha</label>
