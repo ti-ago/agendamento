@@ -83,11 +83,12 @@ function getAvailableSlots($mysqli, $id_agenda, $data) {
         $dur = (int)$r['duracao'];
         $diff = $h_ini->diff($h_fim);
         $total_min = $diff->h * 60 + $diff->i;
-        $qtd = $dur > 0 ? (int)(($total_min - $dur) / $dur) : -1;
+        $passo = $dur + (int)($r['intervalo_sessoes'] ?? 0);
+        $qtd = $passo > 0 ? (int)(($total_min - $dur) / $passo) : -1;
 
         for ($j = 0; $j <= $qtd; $j++) {
             $s_ini = clone $h_ini;
-            $s_ini->modify('+' . ($dur * $j) . ' minutes');
+            $s_ini->modify('+' . ($passo * $j) . ' minutes');
             $s_fim = clone $s_ini;
             $s_fim->modify("+$dur minutes");
             $bloq = false;
@@ -153,11 +154,12 @@ function getMonthAvailability($mysqli, $id_agenda, $mes, $ano) {
             $dur = (int)$r['duracao'];
             $diff = $h_ini->diff($h_fim);
             $total_min = $diff->h * 60 + $diff->i;
-            $qtd = $dur > 0 ? (int)(($total_min - $dur) / $dur) : -1;
+            $passo = $dur + (int)($r['intervalo_sessoes'] ?? 0);
+            $qtd = $passo > 0 ? (int)(($total_min - $dur) / $passo) : -1;
 
             for ($j = 0; $j <= $qtd; $j++) {
                 $s_ini = clone $h_ini;
-                $s_ini->modify('+' . ($dur * $j) . ' minutes');
+                $s_ini->modify('+' . ($passo * $j) . ' minutes');
                 $s_fim = clone $s_ini;
                 $s_fim->modify("+$dur minutes");
 

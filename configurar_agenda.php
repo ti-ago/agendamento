@@ -207,7 +207,8 @@
             $intervalo_dias = $intervalo_datas->days;
 
             $duracao_atendimentos_minutos = $resposta['duracao'];
-            $qtd_atendimentos = (int)($intervalo_minutos - $duracao_atendimentos_minutos) / $duracao_atendimentos_minutos;
+            $passo = $duracao_atendimentos_minutos + (int)($resposta['intervalo_sessoes'] ?? 0);
+            $qtd_atendimentos = $passo > 0 ? (int)($intervalo_minutos - $duracao_atendimentos_minutos) / $passo : 0;
             
             $dias_semana = [];
             $dias_semana_string = "";
@@ -256,8 +257,9 @@
                 'hora_final' => $hora_final->format("H:i"),
                 'duracao' => $duracao_atendimentos_minutos,
                 'dias_semana' => $dias_semana_string,
-                'cor' => $cor_rotina
-            ];      
+                'cor' => $cor_rotina,
+                'intervalo_sessoes' => (int)($resposta['intervalo_sessoes'] ?? 0)
+            ];
             
 
             for ($i = 0; $i <= $intervalo_dias; $i++) {
@@ -266,7 +268,7 @@
                 if(in_array($dia->format('w'),$dias_semana)){
                     for($j = 0; $j <= $qtd_atendimentos; $j++){
                         $clone_hora_inicio = clone $hora_inicio;
-                        $minutos_soma = $duracao_atendimentos_minutos*$j;
+                        $minutos_soma = $passo*$j;
                         $hora_inicio_atendimento = $clone_hora_inicio->modify("+ $minutos_soma minutes");
                         $hora_final_atendimento = clone $hora_inicio_atendimento;
                         $hora_final_atendimento->modify("+ $duracao_atendimentos_minutos minutes");
@@ -480,6 +482,8 @@
                 </div>
                 <label>Duração (min)</label>
                 <input type="number" name="duracao" id="edit_duracao" value="60" required>
+                <label>Intervalo entre Sessões <small>(min)</small></label>
+                <input type="number" name="intervalo_sessoes" id="edit_intervalo_sessoes" value="0" min="0" style="width:100%; padding:6px 8px; border:1px solid #bbb; border-radius:4px; font-size:0.85rem;">
                 <label>Dias da Semana</label>
                 <div class="checkbox-grid">
                     <label><input type="checkbox" name="segunda" id="chk_seg" value="1"> SEG</label>
@@ -618,7 +622,8 @@
             document.getElementById('edit_hora_inicio').value = dados.hora_inicio;
             document.getElementById('edit_hora_final').value = dados.hora_final;
             document.getElementById('edit_duracao').value = dados.duracao;
-            
+            document.getElementById('edit_intervalo_sessoes').value = dados.intervalo_sessoes || 0;
+
             // Checkboxes
             document.getElementById('chk_seg').checked = dados.dias_semana.includes('SEG');
             document.getElementById('chk_ter').checked = dados.dias_semana.includes('TER');

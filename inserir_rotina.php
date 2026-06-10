@@ -6,8 +6,11 @@
     verificarCSRF();
 
     $id_agenda = (int)$_POST['id_agenda'];
-
-    if (!usuarioDono($mysqli, 'rotinas', $id_agenda, 'id_agenda')) {
+    $uid = (int)$_SESSION['id'];
+    $check = $mysqli->prepare("SELECT 1 FROM agenda WHERE id = ? AND id_user = ?");
+    $check->bind_param('ii', $id_agenda, $uid);
+    $check->execute();
+    if ($check->get_result()->num_rows === 0) {
         echo json_encode(['success' => false, 'message' => 'Acesso negado.']);
         exit;
     }
@@ -17,10 +20,28 @@
 
     $data_inicio = (new DateTime($_POST['data_inicio']))->format('Y-m-d');
     $data_termino = (new DateTime($_POST['data_final']))->format('Y-m-d');
+
+    if ($data_inicio > $data_termino) {
+        echo json_encode(['success' => false, 'message' => 'Data inicial nao pode ser maior que a data final.']);
+        exit;
+    }
+
     $hora_inicio = (new DateTime($_POST['hora_inicio']))->format('H:i:s');
     $hora_termino = (new DateTime($_POST['hora_final']))->format('H:i:s');
+
+    if ($hora_inicio >= $hora_termino) {
+        echo json_encode(['success' => false, 'message' => 'Horario inicial deve ser anterior ao horario final.']);
+        exit;
+    }
+
     $duracao = (int)$_POST['duracao'];
     $cor = $_POST['cor'] ?? '#3465a4';
+    $intervalo_sessoes = (int)($_POST['intervalo_sessoes'] ?? 0);
+
+    if ($duracao < 1) {
+        echo json_encode(['success' => false, 'message' => 'Duracao deve ser maior que zero.']);
+        exit;
+    }
 
     $domingo = (int)($_POST['domingo'] ?? 0);
     $segunda = (int)($_POST['segunda'] ?? 0);
@@ -42,7 +63,7 @@
                   )";
 
     $stmt = $mysqli->prepare($check_sql);
-    $stmt->bind_param('iissssiiiiiiii',
+    $stmt->bind_param('iissssiiiiiii',
         $id_agenda, $id_rotina, $data_termino, $data_inicio,
         $hora_termino, $hora_inicio,
         $domingo, $segunda, $terca, $quarta, $quinta, $sexta, $sabado
@@ -59,14 +80,14 @@
         $stmt = $mysqli->prepare("UPDATE rotinas SET
                 data_inicio=?, data_termino=?,
                 hora_inicio=?, hora_termino=?,
-                duracao=?, cor=?,
+                duracao=?, intervalo_sessoes=?, cor=?,
                 domingo=?, segunda=?, terca=?,
                 quarta=?, quinta=?, sexta=?, sabado=?
                 WHERE id=?");
-        $stmt->bind_param('ssssisiiiiiiii',
+        $stmt->bind_param('ssssiisiiiiiiii',
             $data_inicio, $data_termino,
             $hora_inicio, $hora_termino,
-            $duracao, $cor,
+            $duracao, $intervalo_sessoes, $cor,
             $domingo, $segunda, $terca,
             $quarta, $quinta, $sexta, $sabado,
             $id_rotina
@@ -74,13 +95,13 @@
     } else {
         $stmt = $mysqli->prepare("INSERT INTO rotinas
                 (id_agenda,data_inicio,data_termino,hora_inicio,hora_termino,duracao,
-                 domingo,segunda,terca,quarta,quinta,sexta,sabado,cor)
-                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
-        $stmt->bind_param('issssiiiiiiiii',
+                 intervalo_sessoes,domingo,segunda,terca,quarta,quinta,sexta,sabado,cor)
+                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
+        $stmt->bind_param('issssiiiiiiiiis',
             $id_agenda,
             $data_inicio, $data_termino,
             $hora_inicio, $hora_termino,
-            $duracao,
+            $duracao, $intervalo_sessoes,
             $domingo, $segunda, $terca,
             $quarta, $quinta, $sexta, $sabado,
             $cor

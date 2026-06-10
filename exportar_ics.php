@@ -94,7 +94,8 @@ while ($r = $rotinas->fetch_assoc()) {
     $intervalo_horas = $hora_inicio->diff($hora_final);
     $intervalo_minutos = $intervalo_horas->h * 60 + $intervalo_horas->i;
     $duracao = (int)$r['duracao'];
-    $qtd = $duracao > 0 ? (int)(($intervalo_minutos - $duracao) / $duracao) : -1;
+    $passo = $duracao + (int)($r['intervalo_sessoes'] ?? 0);
+    $qtd = $passo > 0 ? (int)(($intervalo_minutos - $duracao) / $passo) : -1;
     $intervalo_dias = $data_inicio->diff($data_final)->days;
 
     $dias_semana = [];
@@ -113,7 +114,7 @@ while ($r = $rotinas->fetch_assoc()) {
 
         for ($j = 0; $j <= $qtd; $j++) {
             $h_ini = clone $hora_inicio;
-            $h_ini->modify('+' . ($duracao * $j) . ' minutes');
+            $h_ini->modify('+' . ($passo * $j) . ' minutes');
             $h_fim = clone $h_ini;
             $h_fim->modify("+$duracao minutes");
 
