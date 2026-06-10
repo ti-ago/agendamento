@@ -698,6 +698,7 @@
                 <span class="close-modal" onclick="fecharModais()">&times;</span>
             </div>
             <form method="POST" action="">
+                <?= campoCSRF() ?>
                 <input type="hidden" name="nova_agenda" value="1">
                 <label>Nome do Serviço</label>
                 <input type="text" name="novo_servico_nome" required placeholder="Ex: Corte de Cabelo">

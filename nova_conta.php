@@ -22,27 +22,17 @@ if(isset($_POST['email']) && isset($_POST['nome']) && isset($_POST['senha']) && 
         $email = $mysqli->real_escape_string(trim($_POST['email']));
         $nome = $mysqli->real_escape_string(trim($_POST['nome']));
         $senha_hash = password_hash($_POST['senha'], PASSWORD_BCRYPT);
-        $confirmacao_token = bin2hex(random_bytes(32));
 
         $result = $mysqli->query("SELECT * FROM users WHERE email = '$email'");
 
         if($result && $result->num_rows > 0) {
             $erro = 'E-mail ja cadastrado';
         } else {
-            $sql_code = "INSERT INTO users (email, nome, senha, senha_hash, confirmacao_token, email_confirmado) VALUES('$email','$nome','','$senha_hash','$confirmacao_token', 0)";
+            $sql_code = "INSERT INTO users (email, nome, senha, senha_hash, email_confirmado) VALUES('$email','$nome','','$senha_hash', 1)";
             $result = $mysqli->query($sql_code);
 
             if($mysqli->affected_rows > 0) {
-                $link_confirmacao = (isset($_SERVER['HTTPS']) ? 'https' : 'http') . '://' . $_SERVER['HTTP_HOST'] . '/agendamento/confirmar_email.php?token=' . $confirmacao_token;
-                $assunto = 'Confirme seu e-mail - Facilite';
-                $corpo = "Ola $nome,\n\nConfirme seu e-mail clicando no link abaixo:\n$link_confirmacao\n\nApos confirmar, voce podera fazer login.\n\nAtenciosamente,\nEquipe Facilite";
-
-                require_once 'includes/email.php';
-                if (enviarEmail($email, $assunto, $corpo)) {
-                    $mensagem = 'Conta criada! Confirme seu e-mail antes de fazer login.';
-                } else {
-                    $mensagem = 'Conta criada! Porem nao foi possivel enviar o e-mail de confirmacao.';
-                }
+                $mensagem = 'Conta criada! Voce ja pode fazer login.';
             } else {
                 $erro = 'Falha ao criar novo usuario';
             }

@@ -22,9 +22,7 @@ if(isset($_POST['email']) || isset($_POST['senha'])) {
         if($sql_query->num_rows == 1) {
             $usuario = $sql_query->fetch_assoc();
 
-            if ($usuario['email_confirmado'] == 0 && $usuario['confirmacao_token'] !== null) {
-                $erro = 'Confirme seu e-mail antes de fazer login. Verifique sua caixa de entrada.';
-            } elseif (password_verify($_POST['senha'], $usuario['senha_hash'])) {
+            if (password_verify($_POST['senha'], $usuario['senha_hash'])) {
                 session_regenerate_id(true);
                 $_SESSION['id'] = $usuario['id'];
                 $_SESSION['nome'] = $usuario['nome'];
